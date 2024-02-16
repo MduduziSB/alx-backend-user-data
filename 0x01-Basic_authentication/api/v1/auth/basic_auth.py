@@ -69,8 +69,8 @@ class BasicAuth(Auth):
         Retrievs User instance based on his email and password
         """
 
-        if user_email is None or type(user_email) != 'str' or \
-           user_pwd is None or type(user_pwd) != 'str':
+        if user_email is None or not isinstance(user_email, str) or \
+           user_pwd is None or not isinstance(user_pwd, str):
             return None
 
         try:
