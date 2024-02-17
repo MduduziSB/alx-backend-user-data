@@ -54,6 +54,7 @@ def before_request_handler() -> str:
             '/api/v1/status/',
             '/api/v1/unauthorized/',
             '/api/v1/forbidden/',
+            '/api/v1/auth_session/login/',
         ]
         if auth.require_auth(request.path, ex_paths):
             request.current_user = auth.current_user(request)
