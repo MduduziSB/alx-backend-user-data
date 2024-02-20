@@ -19,7 +19,7 @@ class DB:
     def __init__(self) -> None:
         """Initialize a new DB instance
         """
-        self._engine = create_engine("sqlite:///a.db", echo=True)
+        self._engine = create_engine("sqlite:///a.db", echo=False)
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
         self.__session = None
@@ -43,10 +43,13 @@ class DB:
         Returns:
             User: The created User object
         """
-        user = User(email=email, hashed_password=hashed_password)
-        session = self._session
-        session.add(user)
-        session.commit()
+        try:
+            user = User(email=email, hashed_password=hashed_password)
+            self._session.add(user)
+            self._session.commit()
+        except Exception:
+            self._session.rollback()
+            user = None
         return user
 
     def find_user_by(self, **kwargs) -> User:
@@ -70,6 +73,19 @@ class DB:
         except (NoResultFound, InvalidRequestError):
             raise
 
+        try:
+            query_filters = {
+                getattr(User, key): value for key,
+                value in kwargs.items() if hasattr(User, key)
+            }
+            result = self._session.query(User).\
+                filter_by(**query_filters).first()
+            if result is None:
+                raise NoResultFound()
+            return result
+        except InvalidRequestError:
+            raise InvalidRequestError()
+
     def update_user(self, user_id: int, **kwargs) -> None:
         """Update a user's attributes based on user_id.
 
@@ -85,14 +101,10 @@ class DB:
             NoResultFound: If no user is found matching the user_id.
             InvalidRequestError: If wrong query arguments are passed.
         """
-        try:
-            user = self.find_user_by(id=user_id)
-            for key, value in kwargs.items():
-                if hasattr(User, key):
-                    setattr(user, key, value)
-                else:
-                    raise ValueError
-            self._session.add(user)
-            self._session.commit()
-        except (NoResultFound, InvalidRequestError):
-            raise
+        user = self.find_user_by(id=user_id)
+        for key, value in kwargs.items():
+            if hasattr(User, key):
+                setattr(user, key, value)
+                self._session.commit()
+            else:
+                raise ValueError()
