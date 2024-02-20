@@ -28,8 +28,8 @@ def register_user() -> str:
 @app.route("/sessions", methods=["POST"])
 def login() -> str:
     """ Function to respond to the POST /sessions route. """
-    email = request.form.get("email")
-    password = request.form.get("password")
+    email = request.form["email"]
+    password = request.form["password"]
 
     if not AUTH.valid_login(email, password):
         abort(401)
