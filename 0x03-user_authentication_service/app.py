@@ -28,17 +28,35 @@ def register_user() -> str:
 @app.route("/sessions", methods=["POST"])
 def login() -> str:
     """ Function to respond to the POST /sessions route. """
-    email = request.form["email"]
-    password = request.form["password"]
-
-    if not AUTH.valid_login(email, password):
+    email = request.form.get('email')
+    password = request.form.get('password')
+    if not email or not password:
         abort(401)
-
+    user = AUTH.valid_login(email, password)
+    if not user:
+        abort(401)
     session_id = AUTH.create_session(email)
-    response = jsonify({"message": "Login successful"})
+    response = jsonify({"email": email, "message": "logged in"})
     response.set_cookie("session_id", session_id)
-
     return response
+
+
+@app.route('/sessions', methods=['DELETE'])
+def logout() -> str:
+    """ logout function to respond to the DELETE /sessions route """
+    session_id = request.cookies.get('session_id')
+
+    if not session_id:
+        abort(403)
+
+    user = AUTH.get_user_from_session_id(session_id)
+
+    if not user:
+        abort(403)
+
+    AUTH.destroy_session(user.id)
+
+    return redirect(url_for('index'))
 
 
 if __name__ == "__main__":
