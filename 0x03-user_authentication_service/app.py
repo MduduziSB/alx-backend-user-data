@@ -30,14 +30,14 @@ def login() -> str:
     """ Function to respond to the POST /sessions route. """
     email = request.form.get('email')
     password = request.form.get('password')
-    if not email or not password:
+
+    if not AUTH.valid_login(email, password):
         abort(401)
-    user = AUTH.valid_login(email, password)
-    if not user:
-        abort(401)
+
     session_id = AUTH.create_session(email)
     response = jsonify({"email": email, "message": "logged in"})
     response.set_cookie("session_id", session_id)
+
     return response
 
 
@@ -45,18 +45,13 @@ def login() -> str:
 def logout() -> str:
     """ logout function to respond to the DELETE /sessions route """
     session_id = request.cookies.get('session_id')
-
-    if not session_id:
-        abort(403)
-
     user = AUTH.get_user_from_session_id(session_id)
 
-    if not user:
+    if user:
+        AUTH.destroy_session(user.id)
+        return redirect('/')
+    else:
         abort(403)
-
-    AUTH.destroy_session(user.id)
-
-    return redirect(url_for('index'))
 
 
 if __name__ == "__main__":
