@@ -53,13 +53,13 @@ def logout() -> str:
     abort(403)
 
 
-@app.route('/profile', methods=['POST'])
+@app.route('/profile', methods=['GET'])
 def profile() -> str:
     """ responds to the GET /profile route """
     session_id = request.cookies.get('session_id')
     user = AUTH.get_user_from_session_id(session_id)
 
-    if not user:
+    if user is None:
         abort(403)
     return jsonify({"email": user.email}), 200
 
@@ -76,14 +76,14 @@ def get_reset_password_token() -> str:
 
 
 @app.route('/reset_password', methods=['PUT'])
-def update_password():
+def update_password() -> str:
     """ function in the app module to respond to the PUT /reset_password """
-    user_email = request.form.get("email")
+    email = request.form.get("email")
     reset_token = request.form.get("reset_token")
     password = request.form.get("new_password")
     try:
         AUTH.update_password(reset_token, password)
-        return jsonify({"email": user_email, "message": "Password updated"})
+        return jsonify({"email": email, "message": "Password updated"})
     except ValueError:
         abort(403)
 
